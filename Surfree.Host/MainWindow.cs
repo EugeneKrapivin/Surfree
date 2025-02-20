@@ -20,5 +20,6 @@ internal class MainWindow : Window
         Modal = false;
         Data = "window";
         Title = "Surfree";
+        CanFocus = false;
     }
 }

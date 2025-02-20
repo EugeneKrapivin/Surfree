@@ -15,6 +15,7 @@ internal class CollectionsView : FrameView
         Title = "Collections";
         Width = 35; // Set a fixed width for the collections view
         Height = Dim.Fill();
+        BorderStyle = LineStyle.Rounded;
 
         var tree = new TreeView()
         {

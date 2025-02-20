@@ -13,11 +13,13 @@ internal class HeadersFrame : FrameView
 
     public HeadersFrame(bool allowEdit = false)
     {
-        X = 0;
+        X = 1;
         Y = 0;
-        Width = Dim.Fill();
+        Width = Dim.Fill(1);
         Height = Dim.Fill();
         BorderStyle = LineStyle.None;
+        CanFocus = false;
+        Title = "test";
         
         _dt = CreateHeadersTable();
         var headersTableView = new TableView
@@ -25,12 +27,12 @@ internal class HeadersFrame : FrameView
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(2),
+            Height = Dim.Fill(1),
             Table = new DataTableSource(_dt),
         };
         headersTableView.Style.ShowHorizontalBottomline = true;
-        headersTableView.BorderStyle = LineStyle.Rounded;
-
+        headersTableView.BorderStyle = LineStyle.None;
+        
         Add(headersTableView);
 
         if (allowEdit)
@@ -38,7 +40,7 @@ internal class HeadersFrame : FrameView
             var addHeaderButton = new Button()
             {
                 X = 0,
-                Y = Pos.Bottom(headersTableView) + 1,
+                Y = Pos.Bottom(headersTableView),
                 Text = "Add Header"
             };
 
@@ -55,7 +57,7 @@ internal class HeadersFrame : FrameView
                 if (e.Col == 0)
                 {
                     var row = _dt.Rows[e.Row];
-                    row["Enabled"] = row["Enabled"] as string == "[x]" ? "[ ]" : "[x]";
+                    row["Enabled"] = row["Enabled"] as string == "  [x]  " ? "  [ ]  " : "  [x]  ";
                     headersTableView.Draw();
                     _dt.AcceptChanges();
                     return;
@@ -82,8 +84,9 @@ internal class HeadersFrame : FrameView
             ColumnName = "Enabled",
             Unique = false,
             Caption = "Enabled",
-            DefaultValue = "[x]",
+            DefaultValue = "  [x]  ",
         });
+        
         tbl.Columns.Add(nameColumn);
         tbl.Columns.Add(new DataColumn
         {
@@ -124,7 +127,7 @@ public abstract class HeaderDialog : Dialog
     protected readonly DataTable _dt;
     protected readonly TextField _nameField;
     protected readonly TextField _valueField;
-    protected readonly TextView _textView;
+    protected readonly Label _errorLabel;
 
     protected abstract string _title { get; }
 
@@ -164,12 +167,15 @@ public abstract class HeaderDialog : Dialog
             Width = Dim.Fill(1)
         };
 
-        _textView = new TextView()
+        _errorLabel = new Label()
         {
-            Height = 3,
+            Height = 1,
+            Width = Dim.Percent(75),
             X = Pos.Center(),
             Y = Pos.Bottom(_valueField) + 1,
-            Visible = false
+            Visible = false,
+            ColorScheme = new ColorScheme(new Terminal.Gui.Attribute(ColorName.Red, ColorScheme.Normal.Background)),
+            CanFocus = false
         };
 
         var buttons = new FrameView()
@@ -177,7 +183,7 @@ public abstract class HeaderDialog : Dialog
             Height = Dim.Auto(),
             Width = Dim.Auto(),
             X = Pos.Center(),
-            Y = Pos.Bottom(_textView) + 2,
+            Y = Pos.Bottom(_errorLabel) + 2,
             BorderStyle = LineStyle.None
         };
         var okButton = new Button()
@@ -209,10 +215,15 @@ public abstract class HeaderDialog : Dialog
             Application.RequestStop();
         };
         
-        Add(nameLabel, _nameField, valueLabel, _valueField, buttons, _textView);     
+        Add(nameLabel, _nameField, valueLabel, _valueField, buttons, _errorLabel);     
     }
 
     protected abstract void OkAccept(object? sender, HandledEventArgs args);
+
+    protected virtual bool ValidateInput()
+    {
+        return true;
+    }
 }
 
 public sealed class EditHeaderDialog : HeaderDialog
@@ -237,11 +248,10 @@ public sealed class EditHeaderDialog : HeaderDialog
 
         if (string.IsNullOrEmpty(newHeaderName))
         {
-            _textView.Text = "Header name can not be empty";
-            _textView.Visible = true;
-            _textView.Width = Dim.Fill(2);
-            _textView.TextAlignment = Alignment.Center;
-            _textView.VerticalTextAlignment = Alignment.Center;
+            _errorLabel.Text = "Header name can not be empty";
+            _errorLabel.Visible = true;
+            _errorLabel.TextAlignment = Alignment.Center;
+            _errorLabel.VerticalTextAlignment = Alignment.Center;
 
             args.Handled = false;
             return;
@@ -253,11 +263,10 @@ public sealed class EditHeaderDialog : HeaderDialog
             var suspetedRowIndex = _dt.Rows.IndexOf(suspectedRow);
             if (suspetedRowIndex != _rowIndex)
             {
-                _textView.Text = "Header already exists";
-                _textView.Visible = true;
-                _textView.Width = Dim.Fill(2);
-                _textView.TextAlignment = Alignment.Center;
-                _textView.VerticalTextAlignment = Alignment.Center;
+                _errorLabel.Text = "Header already exists";
+                _errorLabel.Visible = true;
+                _errorLabel.TextAlignment = Alignment.Center;
+                _errorLabel.VerticalTextAlignment = Alignment.Center;
 
                 args.Handled = false;
                 return;
@@ -288,11 +297,10 @@ internal sealed class AddHeaderDialog : HeaderDialog
 
         if (string.IsNullOrEmpty(addedHeaderName))
         {
-            _textView.Text = "Header name can not be empty";
-            _textView.Visible = true;
-            _textView.Width = Dim.Fill(2);
-            _textView.TextAlignment = Alignment.Center;
-            _textView.VerticalTextAlignment = Alignment.Center;
+            _errorLabel.Text = "Header name can not be empty";
+            _errorLabel.Visible = true;
+            _errorLabel.TextAlignment = Alignment.Center;
+            _errorLabel.VerticalTextAlignment = Alignment.Center;
             
             args.Handled = false;
             return;
@@ -300,11 +308,10 @@ internal sealed class AddHeaderDialog : HeaderDialog
 
         if (_dt.Rows.Contains(addedHeaderName))
         {
-            _textView.Text = "Header already exists";
-            _textView.Visible = true;
-            _textView.Width = Dim.Fill(2);
-            _textView.TextAlignment = Alignment.Center;
-            _textView.VerticalTextAlignment = Alignment.Center;
+            _errorLabel.Text = "Header already exists";
+            _errorLabel.Visible = true;
+            _errorLabel.TextAlignment = Alignment.Center;
+            _errorLabel.VerticalTextAlignment = Alignment.Center;
 
             args.Handled = false;
             return;

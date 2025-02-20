@@ -16,13 +16,13 @@ internal class RequestUrlFrame : FrameView
 
     public RequestUrlFrame()
     {
-        Title = "Request URL";
         Width = Dim.Fill();
-        Height = Dim.Auto(DimAutoStyle.Content, 3, 5);
+        Height = 4;
+        CanFocus = false;
 
         _methodLabel = new Label()
         {
-            X = 0,
+            X = 1,
             Y = 1,
             Text = "Method:"
         };

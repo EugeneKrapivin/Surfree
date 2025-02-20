@@ -11,12 +11,13 @@ internal class ResponseFrame : FrameView
         
         Height = Dim.Fill();
         Width = Dim.Fill();
+        
+        CanFocus = false;
 
         var tabView = new TabView()
         {
-            Title = "_",
             X = 0,
-            Y = 1,
+            Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             BorderStyle = LineStyle.None
