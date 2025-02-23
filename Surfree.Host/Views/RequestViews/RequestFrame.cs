@@ -47,7 +47,7 @@ public class RequestFrame : FrameView
             Y = 0,
             Height = Dim.Fill(),
             Width = Dim.Fill(),
-            View = new HeadersFrame(viewModel, true)
+            View = new RequestHeadersFrame(viewModel)
         };
 
         var bodyTab = new Tab()

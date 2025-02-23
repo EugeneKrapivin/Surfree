@@ -25,19 +25,19 @@ static IServiceProvider ConfigureServices()
     services.AddHttpClient();
     /* TUI bindings */
 
-    services.AddTransient<MainWindow>();
-    services.AddTransient<CollectionsFrame>();
+    services.AddScoped<MainWindow>();
+    services.AddScoped<CollectionsFrame>();
     
     /* request views & view-models */
-    services.AddTransient<DetailsFrame>();
-    services.AddTransient<RequestFrame>();
-    services.AddTransient<RequestUrlFrame>();
+    services.AddScoped<DetailsFrame>();
+    services.AddScoped<RequestFrame>();
+    services.AddScoped<RequestUrlFrame>();
 
-    services.AddTransient<RequestViewModel>();
+    services.AddScoped<RequestViewModel>();
 
     /* response views & view-models */
-    services.AddTransient<ResponseFrame>();
-    services.AddTransient<ResponseViewModel>();
+    services.AddScoped<ResponseFrame>();
+    services.AddScoped<ResponseViewModel>();
 
     return services.BuildServiceProvider();
 }

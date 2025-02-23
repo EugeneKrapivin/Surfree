@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Surfree.Host.ViewModels;
 
-public class RequestViewModel : IHeadersViewModel, IBodyViewModel, IQueryParamsViewModel
+public class RequestViewModel
 {
     public HttpMethod Method { get; set; } = HttpMethod.Get;
 

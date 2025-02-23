@@ -31,8 +31,8 @@ public sealed class ResponseBodyFrame : FrameView
 
         _contentTypeLabel = new Label()
         {
-            X = 1,
-            Y = Pos.Right(headingLabel) + 1,
+            X = Pos.Right(headingLabel) + 1,
+            Y = 0,
             Width = 40,
             Height = 1,
             ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(ColorName.White, ColorName.Blue) }
@@ -44,37 +44,55 @@ public sealed class ResponseBodyFrame : FrameView
         _contentView.X = 1;
         _contentView.Y = Pos.Bottom(_contentTypeLabel);
 
-        Add(_contentView, _contentTypeLabel);
+        Add(headingLabel, _contentView, _contentTypeLabel);
         ViewModel = viewModel;
+
+        viewModel.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ResponseViewModel.Body))
+            {
+                _contentTypeLabel.Text = viewModel.Headers.TryGetValue("content-type", out var headerValue) ? headerValue.HeaderValue : string.Empty;
+                SetViewModel(viewModel);
+            }
+        };
     }
 
     public void SetViewModel(ResponseViewModel model)
     {
+        Remove(_contentView);
+        
         var newView = GetContentView(model);
         newView.Width = Dim.Fill(1);
         newView.Height = Dim.Fill(1);
         newView.X = 1;
         newView.Y = Pos.Bottom(_contentTypeLabel);
-
-        Remove(_contentView);
+        this.Add(newView);
         _contentView = newView;
+        
+
     }
 
-    private View GetContentView(ResponseViewModel? model = null) => model?.Headers["content-type"].HeaderValue switch
+    private View GetContentView(ResponseViewModel? model = null)
     {
-        null => new TextView { ReadOnly = true, ColorScheme = new ColorScheme(new Terminal.Gui.Attribute(ColorName.Black, ColorName.DarkGray)) },
-        "application/json" => new TextView { Text = model.Body, ReadOnly = true },
-        "application/xml" => new TextView { Text = model.Body, ReadOnly = true },
-        "application/x-www-form-urlencoded" => new TableView
+        View Default() => new TextView { ReadOnly = true, ColorScheme = new ColorScheme(new Terminal.Gui.Attribute(ColorName.Black, ColorName.DarkGray)) };
+        if (model is null || model.Headers.TryGetValue("content-type", out var type))
+            return Default();
+
+        return (type?.HeaderValue) switch
         {
-            Table = new DataTableSource(new DataTable() { Columns = { "Name", "Value" } }),
-            Style = new TableStyle()
+            "application/json" => new TextView { Text = model.Body, ReadOnly = true },
+            "application/xml" => new TextView { Text = model.Body, ReadOnly = true },
+            "application/x-www-form-urlencoded" => new TableView
             {
-                ShowHorizontalBottomline = true,
-                ShowHorizontalScrollIndicators = false,
+                Table = new DataTableSource(new DataTable() { Columns = { "Name", "Value" } }),
+                Style = new TableStyle()
+                {
+                    ShowHorizontalBottomline = true,
+                    ShowHorizontalScrollIndicators = false,
+                },
+                BorderStyle = LineStyle.None
             },
-            BorderStyle = LineStyle.None
-        },
-        _ => new TextView { Text = model.Body }
-    };
+            _ => new TextView { Text = model.Body, ReadOnly = true }
+        };
+    }
 }

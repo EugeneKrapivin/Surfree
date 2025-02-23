@@ -10,6 +10,7 @@ public class DetailsFrame : FrameView
 {
     public DetailsFrame(RequestFrame req, ResponseFrame res)
     {
+        Id = "DetailsFrameView";
         Width = Dim.Fill();
         Height = Dim.Fill();
         BorderStyle = LineStyle.None;

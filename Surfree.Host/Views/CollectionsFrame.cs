@@ -12,6 +12,7 @@ public class CollectionsFrame : FrameView
 {
     public CollectionsFrame()
     {
+        Id = "CollectionsFrameView";
         Title = "Collections";
         Width = 35; // Set a fixed width for the collections view
         Height = Dim.Fill();

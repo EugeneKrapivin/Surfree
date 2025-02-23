@@ -9,7 +9,7 @@ using Terminal.Gui;
 
 namespace Surfree.Host.Views.ResponseViews;
 
-public class ResponseFrame : FrameView, IRequestHandler<ResponseMessage>
+public class ResponseFrame : FrameView
 {
     private Tab _bodyTab;
     private Tab _cookiesTab;
@@ -43,7 +43,7 @@ public class ResponseFrame : FrameView, IRequestHandler<ResponseMessage>
             DisplayText = "Headers",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            View = new HeadersFrame(viewModel, false)
+            View = new ResponseHeadersFrame(viewModel)
         };
 
         _bodyTab = new Tab()
@@ -70,17 +70,5 @@ public class ResponseFrame : FrameView, IRequestHandler<ResponseMessage>
 
         Add(_tabView);
         ViewModel = viewModel;
-    }
-
-    public void SetModel(ResponseViewModel model)
-    {
-        (_bodyTab.View as ResponseBodyFrame)?.SetViewModel(model);
-    }
-
-    public ValueTask<Unit> Handle(ResponseMessage request, CancellationToken cancellationToken)
-    {
-        var response = request.Response;
-
-        return Unit.ValueTask;
     }
 }

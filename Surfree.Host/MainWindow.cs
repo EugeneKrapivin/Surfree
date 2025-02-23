@@ -14,6 +14,7 @@ public class MainWindow : Window
         _collections = collections;
         _details = details;
 
+        Id = "MainWindow";
         X = 0;
         Y = 0;
         Width = Dim.Fill(0);

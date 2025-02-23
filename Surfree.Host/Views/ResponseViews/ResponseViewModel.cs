@@ -1,11 +1,20 @@
-﻿using Surfree.Host.ViewModels;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+
+using Surfree.Host.ViewModels;
 
 namespace Surfree.Host.Views.ResponseViews;
 
-public class ResponseViewModel : IHeadersViewModel
+public partial class ResponseViewModel : ObservableObject
 {
-    public Dictionary<string, RequestHeader> Headers { get; set; } = [];
-    public string Body { get; set; }
-    public Dictionary<string, string> Cookies { get; set; } = [];
-    public Dictionary<string, string> Info { get; set; } = [];
+    [ObservableProperty]
+    public partial Dictionary<string, RequestHeader> Headers { get; set; } = new Dictionary<string, RequestHeader>(StringComparer.InvariantCultureIgnoreCase);
+
+    [ObservableProperty]
+    public partial string Body { get; set; }
+
+    [ObservableProperty]
+    public partial Dictionary<string, string> Cookies { get; set; } = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+
+    [ObservableProperty]
+    public partial Dictionary<string, string> Info { get; set; } = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 }
