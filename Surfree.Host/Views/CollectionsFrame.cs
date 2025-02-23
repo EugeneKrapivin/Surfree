@@ -8,9 +8,9 @@ using Terminal.Gui;
 
 namespace Surfree.Host.Views;
 
-internal class CollectionsView : FrameView
+public class CollectionsFrame : FrameView
 {
-    public CollectionsView()
+    public CollectionsFrame()
     {
         Title = "Collections";
         Width = 35; // Set a fixed width for the collections view

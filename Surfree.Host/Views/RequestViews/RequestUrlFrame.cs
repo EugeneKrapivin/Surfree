@@ -1,12 +1,17 @@
-﻿using Pastel;
+﻿using Mediator;
+
+using Surfree.Host.Messages;
+using Surfree.Host.ViewModels;
 
 using System.Collections.ObjectModel;
+
 using Terminal.Gui;
 
-namespace Surfree.Host.Views;
+namespace Surfree.Host.Views.RequestViews;
 
-internal class RequestUrlFrame : FrameView
+public class RequestUrlFrame : FrameView
 {
+    private readonly IMediator _mediator;
     private ComboBox _methodComboBox;
     private Label _urlLabel;
     private TextField _urlText;
@@ -14,11 +19,10 @@ internal class RequestUrlFrame : FrameView
     private Button _sendButton;
     private Label _methodLabel;
 
-    public RequestUrlFrame()
+    public RequestUrlFrame(RequestViewModel viewModel, IMediator mediator)
     {
         Width = Dim.Fill();
         Height = 4;
-        CanFocus = false;
 
         _methodLabel = new Label()
         {
@@ -27,19 +31,22 @@ internal class RequestUrlFrame : FrameView
             Text = "Method:"
         };
         Add(_methodLabel);
-        
+
         _methodComboBox = new ComboBox()
         {
             X = Pos.Right(_methodLabel) + 1,
             Y = Pos.Top(_methodLabel),
             Width = 10,
             Height = 4,
-            CanFocus = true,
             HideDropdownListOnClick = true,
         };
 
         _methodComboBox.SetSource(new ObservableCollection<string>(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"]));
         _methodComboBox.SelectedItem = 0;
+        _methodComboBox.SelectedItemChanged += (s, args) =>
+        {
+            viewModel.Method = HttpMethod.Parse(args.Value.ToString());
+        };
         Add(_methodComboBox);
 
         _urlLabel = new Label()
@@ -55,6 +62,7 @@ internal class RequestUrlFrame : FrameView
             X = Pos.Right(_urlLabel) + 1,
             Y = Pos.Top(_urlLabel),
             Width = 40,
+            Text = "https://",
         };
         Add(_urlText);
 
@@ -68,6 +76,7 @@ internal class RequestUrlFrame : FrameView
             Width = 1,
         };
         Add(_validRune);
+        
         _sendButton = new Button()
         {
             X = Pos.Right(_validRune) + 2,
@@ -75,23 +84,33 @@ internal class RequestUrlFrame : FrameView
             Text = "Send",
             Enabled = Uri.IsWellFormedUriString(_urlText.Text, UriKind.Absolute)
         };
+        _sendButton.Accept += async (s, e) =>
+        {
+            await mediator.Send(new SendRequestCommand(viewModel)).ConfigureAwait(false);
+        };
         Add(_sendButton);
 
         _urlText.TextChanging += urlTextChanged;
+
+        ViewModel = viewModel;
+        _mediator = mediator;
     }
+
+    public RequestViewModel ViewModel { get; }
 
     private void urlTextChanged(object? sender, EventArgs e)
     {
-        var cancelEvent = e as CancelEventArgs<string>;
-        if (cancelEvent is null) return;
+        if (e is not CancelEventArgs<string> cancelEvent) return;
 
-        if (Uri.TryCreate(cancelEvent.NewValue, new UriCreationOptions { }, out var _))
+        if (Uri.TryCreate(cancelEvent.NewValue, new UriCreationOptions { }, out var url))
         {
             _validRune.Text = "✔";
             _validRune.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.BrightGreen, ColorName.Blue) };
             _validRune.SetNeedsDisplay();
             _validRune.Visible = true;
             _sendButton.Enabled = true;
+
+            ViewModel.Url = url;
         }
         else
         {
@@ -102,19 +121,4 @@ internal class RequestUrlFrame : FrameView
             _sendButton.Enabled = false;
         }
     }
-
-    public RequestUrlModel GetUrlModel()
-    {
-        return new RequestUrlModel()
-        {
-            Uri = new Uri(_urlText.Text),
-            Method = new HttpMethod(_methodComboBox.SelectedItem.ToString())
-        };
-    }
-}
-
-public class RequestUrlModel
-{
-    public Uri Uri { get; set; }
-    public HttpMethod Method { get; set; }
 }

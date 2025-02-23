@@ -1,17 +1,21 @@
-﻿using Spectre.Console;
+﻿using Surfree.Host.ViewModels;
 
 using System.ComponentModel;
 using System.Data;
+using System.Reflection.PortableExecutable;
 
 using Terminal.Gui;
 
 namespace Surfree.Host.Views;
 
-internal class HeadersFrame : FrameView
+public class HeadersFrame : FrameView
 {
     private DataTable _dt;
+    private TableView _headersTableView;
 
-    public HeadersFrame(bool allowEdit = false)
+    public IHeadersViewModel ViewModel { get; }
+
+    public HeadersFrame(IHeadersViewModel viewModel, bool allowEdit = false)
     {
         X = 1;
         Y = 0;
@@ -21,8 +25,9 @@ internal class HeadersFrame : FrameView
         CanFocus = false;
         Title = "test";
         
-        _dt = CreateHeadersTable();
-        var headersTableView = new TableView
+        _dt = CreateHeadersTable(viewModel.Headers.Values, allowEdit);
+
+        _headersTableView = new TableView
         {
             X = 0,
             Y = 0,
@@ -30,45 +35,66 @@ internal class HeadersFrame : FrameView
             Height = Dim.Fill(1),
             Table = new DataTableSource(_dt),
         };
-        headersTableView.Style.ShowHorizontalBottomline = true;
-        headersTableView.BorderStyle = LineStyle.None;
+        _headersTableView.Style.ShowHorizontalBottomline = true;
+        _headersTableView.BorderStyle = LineStyle.None;
         
-        Add(headersTableView);
+        Add(_headersTableView);
 
         if (allowEdit)
         {
             var addHeaderButton = new Button()
             {
                 X = 0,
-                Y = Pos.Bottom(headersTableView),
+                Y = Pos.Bottom(_headersTableView),
                 Text = "Add Header"
             };
 
             addHeaderButton.Accept += (sender, e) =>
             {
-                var addDialog = new AddHeaderDialog(_dt);
+                var addDialog = new AddHeaderDialog(viewModel, _dt);
                 Application.Run(addDialog);
             };
 
             Add(addHeaderButton);
 
-            headersTableView.CellActivated += (sender, e) =>
+            _headersTableView.CellActivated += (sender, e) =>
             {
+                var row = _dt.Rows[e.Row];
+                var existing = viewModel.Headers.TryGetValue((string)row["Name"], out var headerViewModel);
+                if (!existing || headerViewModel is null)
+                {
+                    throw new Exception("missing header in backing model");
+                }
                 if (e.Col == 0)
                 {
-                    var row = _dt.Rows[e.Row];
                     row["Enabled"] = row["Enabled"] as string == "  [x]  " ? "  [ ]  " : "  [x]  ";
-                    headersTableView.Draw();
-                    _dt.AcceptChanges();
-                    return;
+
+                    viewModel.Headers[(string)row["Name"]] = headerViewModel with { Enabled = row["Enabled"] as string == "  [x]  " };
                 }
-                var editDialog = new EditHeaderDialog(_dt, e.Row);
-                Application.Run(editDialog);
+                else
+                {
+                    var currentName = (string)row["Name"];
+
+                    var currentValue = row["Value"] as string;
+                    
+                    var editDialog = new EditHeaderDialog(_dt, e.Row);
+                    Application.Run(editDialog);
+                    
+                    var newName = (string)row["Name"];
+                    var newValue = (string)row["Value"];
+
+                    viewModel.Headers.Remove(currentName);
+                    viewModel.Headers.Add(newName, headerViewModel with { HeaderName = newName, HeaderValue = newValue });
+                }
+
+                _dt.AcceptChanges();
             };
         }
+
+        ViewModel = viewModel;
     }
 
-    private DataTable CreateHeadersTable()
+    private DataTable CreateHeadersTable(IEnumerable<RequestHeader> headers, bool allowEdit = false)
     {
         var tbl = new DataTable();
         var nameColumn = new DataColumn
@@ -78,14 +104,17 @@ internal class HeadersFrame : FrameView
             Unique = true,
             Caption = "Name",
         };
-        tbl.Columns.Add(new DataColumn
+        if (allowEdit)
         {
-            DataType = typeof(string),
-            ColumnName = "Enabled",
-            Unique = false,
-            Caption = "Enabled",
-            DefaultValue = "  [x]  ",
-        });
+            tbl.Columns.Add(new DataColumn
+            {
+                DataType = typeof(string),
+                ColumnName = "Enabled",
+                Unique = false,
+                Caption = "Enabled",
+                DefaultValue = "  [x]  ",
+            });
+        }
         
         tbl.Columns.Add(nameColumn);
         tbl.Columns.Add(new DataColumn
@@ -96,30 +125,22 @@ internal class HeadersFrame : FrameView
             Caption = "Value",
         });
         tbl.PrimaryKey = [nameColumn];
+
+        foreach (var header in headers)
+        {
+            var row = _dt.NewRow();
+            row["Name"] = header.HeaderName;
+            row["Value"] = header.HeaderValue;
+            if (allowEdit)
+            {
+                row["Enabled"] = header.Enabled ? "  [x]  " : "  [ ]  ";
+            }
+            _dt.Rows.Add(row);
+            _dt.AcceptChanges();
+        }
+
         return tbl;
     }
-
-    public IEnumerable<RequestHeaders> GetHeaders()
-    {
-        foreach (DataRow row in _dt.Rows)
-        {
-            if (row["Enabled"] as string == "[x]")
-            {
-                yield return new RequestHeaders
-                {
-                    HeaderName = row["Name"] as string ?? "",
-                    HeaderValue = row["Value"] as string ?? "",
-                };
-            }
-        }
-    }
-}
-
-public sealed class RequestHeaders
-{
-    public bool Enabled { get; set; }
-    public required string HeaderName { get; set; }
-    public required string HeaderValue { get; set; }
 }
 
 public abstract class HeaderDialog : Dialog
@@ -282,10 +303,13 @@ public sealed class EditHeaderDialog : HeaderDialog
     }
 }
 
-internal sealed class AddHeaderDialog : HeaderDialog
+public sealed class AddHeaderDialog : HeaderDialog
 {
-    public AddHeaderDialog(DataTable dt) : base(dt)
+    private readonly IHeadersViewModel _viewModel;
+
+    public AddHeaderDialog(IHeadersViewModel viewModel, DataTable dt) : base(dt)
     {
+        _viewModel = viewModel;
     }
 
     protected override string _title => "Add header";
@@ -321,6 +345,8 @@ internal sealed class AddHeaderDialog : HeaderDialog
         row["Value"] = addedValue;
         _dt.Rows.Add(row);
         _dt.AcceptChanges();
+        
+        _viewModel.Headers.Add(addedHeaderName, new RequestHeader(addedHeaderName, addedValue, true));
 
         args.Handled = true;
     }

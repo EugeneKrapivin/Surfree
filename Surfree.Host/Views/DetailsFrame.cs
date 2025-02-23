@@ -1,19 +1,20 @@
-﻿using Terminal.Gui;
+﻿using Surfree.Host.ViewModels;
+using Surfree.Host.Views.RequestViews;
+using Surfree.Host.Views.ResponseViews;
+
+using Terminal.Gui;
 
 namespace Surfree.Host.Views;
 
-internal class DetailsFrame : FrameView
+public class DetailsFrame : FrameView
 {
-    public DetailsFrame()
+    public DetailsFrame(RequestFrame req, ResponseFrame res)
     {
         Width = Dim.Fill();
         Height = Dim.Fill();
         BorderStyle = LineStyle.None;
-        CanFocus = false;
 
-        var req = new RequestFrame();
-        var res = new ResponseFrame();
-        
+
         req.X = 1;
         req.Y = 0;
         req.Width = Dim.Fill();
@@ -23,7 +24,6 @@ internal class DetailsFrame : FrameView
         res.Y = Pos.Bottom(req);
         res.Width = Dim.Fill();
         res.Height = Dim.Percent(50);
-
 
         Add(req, res);
     }
