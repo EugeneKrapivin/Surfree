@@ -14,7 +14,7 @@ namespace Surfree.Host.Views.RequestViews;
 
 public class RequestFrame : FrameView
 {
-    public RequestFrame(RequestUrlFrame urlView, RequestViewModel viewModel)
+    public RequestFrame(RequestUrlFrame urlView, RequestViewModel viewModel, ThemeConfig themeConfig)
     {
         Title = "Request";
         BorderStyle = LineStyle.Rounded;
@@ -23,7 +23,28 @@ public class RequestFrame : FrameView
         Width = Dim.Fill();
         Enabled = true;
         CanFocus = true;
-        
+
+        var theme = themeConfig.Theme;
+
+        ColorScheme = new ColorScheme
+        {
+            Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+            Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+        };
+
+        themeConfig.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ThemeConfig.Theme))
+            {
+                theme = themeConfig.Theme;
+                ColorScheme = new ColorScheme
+                {
+                    Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+                    Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+                };
+            }
+        };
+
         urlView.X = 1;
         urlView.Y = 0;
         urlView.Width = Dim.Fill(1);
@@ -47,7 +68,7 @@ public class RequestFrame : FrameView
             Y = 0,
             Height = Dim.Fill(),
             Width = Dim.Fill(),
-            View = new RequestHeadersFrame(viewModel)
+            View = new RequestHeadersFrame(viewModel, themeConfig)
         };
 
         var bodyTab = new Tab()
@@ -57,7 +78,7 @@ public class RequestFrame : FrameView
             Y = 0,
             Height = Dim.Fill(),
             Width = Dim.Fill(1),
-            View = new RequestBodyFrame(viewModel)
+            View = new RequestBodyFrame(viewModel, themeConfig)
         };
         var query = new Tab()
         {

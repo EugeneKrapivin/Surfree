@@ -14,7 +14,7 @@ public class RequestHeadersFrame : FrameView
     private DataTable _dt;
     private TableView _headersTableView;
 
-    public RequestHeadersFrame(RequestViewModel viewModel)
+    public RequestHeadersFrame(RequestViewModel viewModel, ThemeConfig themeConfig)
     {
         X = 1;
         Y = 0;
@@ -24,8 +24,29 @@ public class RequestHeadersFrame : FrameView
         CanFocus = false;
         Title = "test";
 
-        _dt = CreateHeadersTable(viewModel.Headers.Values);
+        var theme = themeConfig.Theme;
 
+        ColorScheme = new ColorScheme
+        {
+            Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+            Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+        };
+
+        themeConfig.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ThemeConfig.Theme))
+            {
+                theme = themeConfig.Theme;
+                ColorScheme = new ColorScheme
+                {
+                    Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+                    Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+                };
+            }
+        };
+
+        _dt = CreateHeadersTable(viewModel.Headers.Values);
+        
         _headersTableView = new TableView
         {
             X = 0,
@@ -33,10 +54,26 @@ public class RequestHeadersFrame : FrameView
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
             Table = new DataTableSource(_dt),
+            ColorScheme = new ColorScheme
+            {
+                Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+                Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+            }
         };
         _headersTableView.Style.ShowHorizontalBottomline = true;
         _headersTableView.BorderStyle = LineStyle.None;
-
+        _headersTableView.Style.RowColorGetter = (RowColorGetterArgs args) =>
+        {
+            var normal = args.RowIndex % 2 == 0
+                ? new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+                : new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background).GetDarkerColor());
+            
+            return new ColorScheme
+            {
+                Normal = normal,
+                Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Accent), Color.Parse(theme.Accent)),
+            };
+        };
         Add(_headersTableView);
 
         var addHeaderButton = new Button()

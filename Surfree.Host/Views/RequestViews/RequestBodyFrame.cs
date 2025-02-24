@@ -11,41 +11,74 @@ public sealed class RequestBodyFrame : FrameView
 {
     private Label _contentTypeLabel;
     private ComboBox _contentTypeCombo;
-    private TextView _jsonTextView;
-    private TextView _xmlTextView;
-    private TableView _formTableView;
+    private TextView _editor;
 
-    public RequestBodyFrame(RequestViewModel viewModel)
+    public RequestBodyFrame(RequestViewModel viewModel, ThemeConfig themeConfig)
     {
         ViewModel = viewModel;
-        
+
+        _theme = themeConfig.Theme;
+
+        ColorScheme = new ColorScheme
+        {
+            Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Secondary), Color.Parse(_theme.Background)),
+            Focus = new Terminal.Gui.Attribute(Color.Parse(_theme.Primary), Color.Parse(_theme.Background))
+        };
+
+        themeConfig.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ThemeConfig.Theme))
+            {
+                _theme = themeConfig.Theme;
+                ColorScheme = new ColorScheme
+                {
+                    Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Secondary), Color.Parse(_theme.Background)),
+                    Focus = new Terminal.Gui.Attribute(Color.Parse(_theme.Primary), Color.Parse(_theme.Background))
+                };
+            }
+        };
+
         InitComponent();
+
+        _editor.ColorScheme = (_editor.ColorScheme ?? ColorScheme) with
+        {
+            Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Primary), Color.Parse(_theme.Background))
+        };
+
+        viewModel.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(RequestViewModel.ContentType))
+            {
+                // todo add syntax highlighting here
+            }
+
+            if (args.PropertyName == nameof(RequestViewModel.Method))
+            {
+                if (viewModel.Method == HttpMethod.Get 
+                    || viewModel.Method == HttpMethod.Delete
+                    || viewModel.Method == HttpMethod.Head)
+                {
+                    _editor.ReadOnly = true;
+                    _editor.ColorScheme = _editor.ColorScheme with
+                    {
+                        Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Secondary), Color.Parse(_theme.Panel))
+                    };
+                }
+                else
+                {
+                    _editor.ReadOnly = false;
+                    _editor.ColorScheme = _editor.ColorScheme with
+                    {
+                        Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Primary), Color.Parse(_theme.Panel))
+                    };
+                }
+            }
+        };
 
         _contentTypeCombo.SelectedItemChanged += (sender, e) =>
         {
-            if (_contentTypeCombo.Text == "application/json")
-            {
-                _jsonTextView.Visible = true;
-                _formTableView.Visible = false;
-                _xmlTextView.Visible = false;
-                _jsonTextView.TextChanged += (s, args) => viewModel.Body = _jsonTextView.Text;
-                viewModel.ContentType = "application/json";
-
-            }
-            else if (_contentTypeCombo.Text == "application/x-www-form-urlencoded")
-            {
-                _jsonTextView.Visible = false;
-                _formTableView.Visible = true;
-                _xmlTextView.Visible = false;
-                viewModel.ContentType = "application/x-www-form-urlencoded";
-            }
-            else
-            {
-                _xmlTextView.Visible = true;
-                _jsonTextView.Visible = false;
-                _formTableView.Visible = false;
-                viewModel.ContentType = "application/xml";
-            }
+            _editor.TextChanged += (s, args) => viewModel.Body = _editor.Text;
+            viewModel.ContentType = _contentTypeCombo.Text;
         };
     }
 
@@ -53,7 +86,6 @@ public sealed class RequestBodyFrame : FrameView
     {
         Title = "Body";
         BorderStyle = LineStyle.None;
-        CanFocus = false;
         Height = Dim.Fill();
         Width = Dim.Fill(1);
         X = 1;
@@ -76,6 +108,11 @@ public sealed class RequestBodyFrame : FrameView
             ReadOnly = true,
             CanFocus = false,
             HideDropdownListOnClick = true,
+            ColorScheme = new()
+            {
+                Normal = new Terminal.Gui.Attribute(Color.Parse(_theme.Primary), Color.Parse(_theme.Surface))
+            },
+            Enabled = ViewModel.Method == HttpMethod.Get || ViewModel.Method == HttpMethod.Delete || ViewModel.Method == HttpMethod.Head
         };
         var source = new ObservableCollection<string>
         {
@@ -84,50 +121,23 @@ public sealed class RequestBodyFrame : FrameView
             "application/xml"
         };
         _contentTypeCombo.SetSource(source);
+        _contentTypeCombo.SelectedItem = 0;
 
-        _jsonTextView = new TextView
+        _editor = new TextView
         {
-            Visible = true,
-            Text = """
-            { 
-            }
-            """,
+            Text = "so lonely in here...",
             Width = Dim.Fill(1),
             Height = Dim.Fill(1),
             X = 1,
             Y = Pos.Bottom(_contentTypeCombo),
+            BorderStyle = LineStyle.RoundedDotted,
+            ReadOnly = ViewModel.Method == HttpMethod.Get || ViewModel.Method == HttpMethod.Delete || ViewModel.Method == HttpMethod.Head
         };
 
-        _xmlTextView = new TextView
-        {
-            Visible = false,
-            Text = """
-            <root> 
-            </root>
-            """,
-            Width = Dim.Fill(1),
-            Height = Dim.Fill(1),
-            X = 1,
-            Y = Pos.Bottom(_contentTypeCombo),
-        };
-
-        _formTableView = new TableView
-        {
-            Visible = false,
-            Width = Dim.Fill(1),
-            Height = Dim.Fill(1),
-            X = 1,
-            Y = Pos.Bottom(_contentTypeCombo),
-            Table = new DataTableSource(new DataTable() { Columns = { "Name", "Value" } }),
-        };
-
-        _formTableView.Style.ShowHorizontalBottomline = true;
-        _formTableView.Style.ShowHorizontalScrollIndicators = false;
-        _formTableView.BorderStyle = LineStyle.Rounded;
-
-        Add(_formTableView, _jsonTextView, _xmlTextView, _contentTypeLabel, _contentTypeCombo);
-
+        Add(_editor, _contentTypeLabel, _contentTypeCombo);
     }
 
     public RequestViewModel ViewModel { get; }
+
+    private Theme _theme;
 }

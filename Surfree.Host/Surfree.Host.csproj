@@ -6,7 +6,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
-		<NoWarn>NU1608</NoWarn> <!-- Ignore warning resolved higher version -->
+		<NoWarn>NU1608</NoWarn>
+		<PublishTrimmed>True</PublishTrimmed>
+		<PublishAot>True</PublishAot> <!-- Ignore warning resolved higher version -->
 	</PropertyGroup>
 
 	<ItemGroup>

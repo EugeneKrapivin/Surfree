@@ -24,6 +24,7 @@ static IServiceProvider ConfigureServices()
     services.AddMediator();
     services.AddHttpClient();
     /* TUI bindings */
+    services.AddSingleton<ThemeConfig>();
 
     services.AddScoped<MainWindow>();
     services.AddScoped<CollectionsFrame>();

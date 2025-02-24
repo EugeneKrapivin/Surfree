@@ -9,7 +9,7 @@ public class MainWindow : Window
     private readonly CollectionsFrame _collections;
     private readonly DetailsFrame _details;
 
-    public MainWindow(CollectionsFrame collections, DetailsFrame details)
+    public MainWindow(CollectionsFrame collections, DetailsFrame details, ThemeConfig themeConfig)
     {
         _collections = collections;
         _details = details;
@@ -24,6 +24,27 @@ public class MainWindow : Window
         CanFocus = true;
         Enabled = true;
         BorderStyle = LineStyle.Rounded;
+
+        var theme = themeConfig.Theme;
+
+        ColorScheme = new ColorScheme 
+        {
+            Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+            Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+        };
+
+        themeConfig.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(ThemeConfig.Theme))
+            {
+                theme = themeConfig.Theme;
+                ColorScheme = new ColorScheme
+                {
+                    Normal = new Terminal.Gui.Attribute(Color.Parse(theme.Secondary), Color.Parse(theme.Background)),
+                    Focus = new Terminal.Gui.Attribute(Color.Parse(theme.Primary), Color.Parse(theme.Background))
+                };
+            }
+        };
 
         collections.X = 0;
         collections.Y = 0;
