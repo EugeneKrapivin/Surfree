@@ -3,6 +3,7 @@
 using Surfree.Host.Messages;
 using Surfree.Host.Views.RequestViews;
 
+using System.Net;
 using System.Reflection;
 
 using Terminal.Gui;
@@ -56,18 +57,24 @@ public class ResponseFrame : FrameView
 
         _cookiesTab = new Tab()
         {
-            DisplayText = "Cookies"
+            DisplayText = "Cookies",
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            View = new ResponseCookiesFrame(viewModel)
         };
         _infoTab = new Tab()
         {
             DisplayText = "Info",
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            View = new ResponseInfoFrame(viewModel)
         };
 
-        _tabView.AddTab(_headersTab, true);
+        _tabView.AddTab(_infoTab, true);
+        _tabView.AddTab(_headersTab, false);
         _tabView.AddTab(_bodyTab, false);
         _tabView.AddTab(_cookiesTab, false);
-        _tabView.AddTab(_infoTab, false);
-
+        
         Add(_tabView);
         ViewModel = viewModel;
     }

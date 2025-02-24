@@ -170,8 +170,6 @@ public class ResponseHeadersFrame : FrameView
             {
                 _dt = CreateHeadersTable(viewModel.Headers.Values);
                 _headersTableView.Table = new DataTableSource(_dt);
-                
-                _headersTableView.Draw();
             }
         };
 
